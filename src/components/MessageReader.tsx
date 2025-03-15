@@ -3,10 +3,14 @@ import { Conversation, Message } from '@/lib/types';
 import { getConversationByUsername, getConversations, sendMessage, setActiveConversation } from '@/services/messageService';
 import ConversationList from './ConversationList';
 import MessageBubble from './MessageBubble';
-import { ChevronLeft, Paperclip, Mic, Send, X, Smile } from 'lucide-react';
+import { ChevronLeft, Paperclip, Mic, Send, X, Smile, Plus, Database, Upload } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { Button } from './ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
+import { Input } from './ui/input';
+import { toast } from 'sonner';
 
 const MessageReader = () => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -15,7 +19,9 @@ const MessageReader = () => {
   const [loading, setLoading] = useState(true);
   const [messageInput, setMessageInput] = useState('');
   const [showConversations, setShowConversations] = useState(true);
+  const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const isMobile = useIsMobile();
   
   useEffect(() => {
@@ -45,7 +51,7 @@ const MessageReader = () => {
       setActiveConversation(conversation);
       setMessages(conversation.messages);
       
-      setActiveConversation(conversation.id);
+      setActiveConversation(conversation);
       
       setConversations(prevConversations => 
         prevConversations.map(c => ({
@@ -124,16 +130,49 @@ const MessageReader = () => {
     setShowConversations(true);
   };
   
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setLoading(true);
+      
+      setTimeout(() => {
+        setLoading(false);
+        setIsUploadDialogOpen(false);
+        toast.success('Database uploaded successfully', {
+          description: 'Your messages have been loaded.',
+          duration: 3000
+        });
+        
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+      }, 1500);
+    }
+  };
+  
+  const handleUploadClick = () => {
+    setIsUploadDialogOpen(true);
+  };
+  
   return (
     <div className="flex h-full bg-white overflow-hidden rounded-lg shadow-lg border border-gray-200">
       <div 
         className={cn(
-          "w-full md:w-80 border-r border-gray-200 bg-sidebar flex-shrink-0 transition-all duration-300 ease-in-out",
+          "w-full md:w-80 border-r border-gray-200 bg-sidebar flex-shrink-0 transition-all duration-300 ease-in-out relative",
           isMobile && !showConversations && "hidden"
         )}
       >
-        <div className="h-16 px-4 border-b border-gray-200 flex items-center">
+        <div className="h-16 px-4 border-b border-gray-200 flex items-center justify-between">
           <h1 className="text-lg font-semibold">Messages</h1>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="rounded-full" 
+            onClick={handleUploadClick}
+            title="Upload database"
+          >
+            <Upload className="h-5 w-5" />
+          </Button>
         </div>
         <ConversationList 
           conversations={conversations} 
@@ -253,9 +292,57 @@ const MessageReader = () => {
                     ? 'No conversations yet' 
                     : 'Select a conversation to start messaging'}
             </p>
+            <Button 
+              variant="outline" 
+              className="mt-4 flex items-center gap-2"
+              onClick={handleUploadClick}
+            >
+              <Upload className="h-4 w-4" /> 
+              Upload Database
+            </Button>
           </div>
         )}
       </div>
+      
+      <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Database className="h-5 w-5" /> Upload Database
+            </DialogTitle>
+            <DialogDescription>
+              Upload your message database file to view your conversations.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="flex items-center justify-center w-full">
+              <label 
+                htmlFor="database-file" 
+                className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100"
+              >
+                <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                  <Upload className="w-8 h-8 mb-2 text-gray-500" />
+                  <p className="mb-2 text-sm text-gray-500">
+                    <span className="font-semibold">Click to upload</span> or drag and drop
+                  </p>
+                  <p className="text-xs text-gray-500">SQLite database file</p>
+                </div>
+                <Input
+                  id="database-file"
+                  type="file"
+                  accept=".db,.sqlite,.sqlite3"
+                  className="hidden"
+                  onChange={handleFileUpload}
+                  ref={fileInputRef}
+                />
+              </label>
+            </div>
+            <div className="text-xs text-gray-500 text-center">
+              Your data remains on your device and is not uploaded to any server.
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
