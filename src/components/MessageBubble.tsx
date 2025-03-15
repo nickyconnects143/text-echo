@@ -1,4 +1,3 @@
-
 import { Message } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -22,8 +21,14 @@ const MessageBubble = ({ message }: MessageBubbleProps) => {
     return () => clearTimeout(timer);
   }, []);
   
-  // Format the timestamp
-  const formattedTime = format(new Date(message.timestamp), 'h:mm a');
+  // Format the timestamp to handle SQL format '%Y-%m-%d %H:%M:%S'
+  const formattedTime = (() => {
+    // If timestamp has a 'T', assume ISO format, otherwise SQL format
+    const date = message.timestamp.includes('T')
+      ? new Date(message.timestamp)
+      : new Date(message.timestamp.replace(' ', 'T') + 'Z');
+    return format(date, 'h:mm a');
+  })();
   
   // Define bubble style based on if the message is from the current user
   const bubbleStyle = message.fromMe 

@@ -1,4 +1,3 @@
-
 import { Conversation, Message, MessageType, User } from '@/lib/types';
 
 // Mock users based on the database structure
@@ -45,12 +44,12 @@ const users: User[] = [
   }
 ];
 
-// Mock messages generator function
+// Mock messages generator function that simulates your database schema
 const generateMessages = (userId: string): Message[] => {
   const user = users.find(u => u.id === userId);
   if (!user) return [];
 
-  // Define message types based on your database schema
+  // Define message types based on your database schema exactly as shown in your SQL
   const messageTypes: MessageType[] = ['text', 'image', 'audio', 'video', 'contact', 'location', 'document', 'gif', 'sticker', 'unknown'];
   const messageCount = 15 + Math.floor(Math.random() * 15); // Between 15-30 messages
   const messages: Message[] = [];
@@ -61,7 +60,11 @@ const generateMessages = (userId: string): Message[] => {
   for (let i = 0; i < messageCount; i++) {
     const isFromMe = Math.random() > 0.5;
     const messageType = messageTypes[Math.floor(Math.random() * messageTypes.length)];
-    const timestamp = new Date(now.getTime() - Math.random() * oneDay * 3).toISOString();
+    // Format timestamp like in your SQL: '%Y-%m-%d %H:%M:%S'
+    const timestamp = new Date(now.getTime() - Math.random() * oneDay * 3)
+                      .toISOString()
+                      .replace('T', ' ')
+                      .substring(0, 19);
     
     let textData = '';
     let filePath;
@@ -102,17 +105,17 @@ const generateMessages = (userId: string): Message[] => {
       pageCount = Math.floor(Math.random() * 10) + 1; // 1-10 pages
     }
     
-    // Create message object that matches your database schema
+    // Create message object that matches your database schema exactly
     messages.push({
-      id: `msg-${userId}-${i}`,
+      id: `msg-${userId}-${i}`, // Simulating the _id field from your database
       fromMe: isFromMe,
       messageType,
       timestamp,
       textData,
       starred: Math.random() > 0.9, // 10% chance of being starred
-      chatNumber: user.phoneNumber,
-      sender: isFromMe ? 'You' : user.phoneNumber,
-      username: isFromMe ? 'You' : user.name,
+      chatNumber: user.phoneNumber, // Matches chat_number in your schema
+      sender: isFromMe ? 'You' : user.phoneNumber, // Matches sender in your schema
+      username: isFromMe ? 'You' : user.name, // Matches username in your schema
       reaction: Math.random() > 0.8 ? ['❤️', '👍', '😂', '😮', '😢', '🙏'][Math.floor(Math.random() * 6)] : undefined,
       forwardScore: Math.random() > 0.9 ? Math.floor(Math.random() * 5) + 1 : undefined,
       linkIndex: Math.random() > 0.9 ? Math.floor(Math.random() * 3) : undefined,
@@ -147,8 +150,9 @@ const generateConversations = (): Conversation[] => {
 // Mock conversations
 let conversations = generateConversations();
 
-// Simulate API call to get conversations
+// Simulate API call to get conversations - in a real implementation, this would fetch from your database
 export const getConversations = async (): Promise<Conversation[]> => {
+  // In a real implementation, this would query your message_data table
   return new Promise(resolve => {
     setTimeout(() => {
       resolve(conversations);
@@ -156,7 +160,7 @@ export const getConversations = async (): Promise<Conversation[]> => {
   });
 };
 
-// Simulate API call to get messages for a conversation
+// Simulate API call to get messages for a conversation by username - matches your requirement
 export const getMessagesByUsername = async (username: string): Promise<Message[]> => {
   return new Promise(resolve => {
     const conversation = conversations.find(c => c.user.name === username);
@@ -166,7 +170,7 @@ export const getMessagesByUsername = async (username: string): Promise<Message[]
   });
 };
 
-// Simulate API call to get a specific conversation
+// Get a specific conversation by username - this matches your query WHERE clause
 export const getConversationByUsername = async (username: string): Promise<Conversation | null> => {
   return new Promise(resolve => {
     const conversation = conversations.find(c => c.user.name === username);
@@ -185,17 +189,17 @@ export const setActiveConversation = (conversationId: string): void => {
   }));
 };
 
-// Simulate sending a new message
+// Send a new message - simulates adding a row to your message_data table
 export const sendMessage = async (conversationId: string, text: string): Promise<Message> => {
   return new Promise(resolve => {
     const conversation = conversations.find(c => c.id === conversationId);
     if (!conversation) throw new Error('Conversation not found');
     
     const newMessage: Message = {
-      id: `msg-${conversationId}-${Date.now()}`,
+      id: `msg-${conversationId}-${Date.now()}`, // Simulates a new _id in your database
       fromMe: true,
       messageType: 'text',
-      timestamp: new Date().toISOString(),
+      timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19), // Format like your SQL timestamp
       textData: text,
       starred: false,
       chatNumber: conversation.user.phoneNumber,

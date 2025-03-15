@@ -5,7 +5,7 @@ import ConversationList from './ConversationList';
 import MessageBubble from './MessageBubble';
 import { ChevronLeft, Paperclip, Mic, Send, X, Smile } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 const MessageReader = () => {
@@ -18,14 +18,12 @@ const MessageReader = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
   
-  // Load conversations
   useEffect(() => {
     const fetchConversations = async () => {
       setLoading(true);
       try {
         const data = await getConversations();
         setConversations(data);
-        // Default to first conversation on desktop
         if (!isMobile && data.length > 0 && !activeConversation) {
           handleSelectConversation(data[0].id);
         }
@@ -39,7 +37,6 @@ const MessageReader = () => {
     fetchConversations();
   }, []);
   
-  // Handle conversation selection
   const handleSelectConversation = async (conversationId: string) => {
     try {
       const conversation = conversations.find(c => c.id === conversationId);
@@ -48,10 +45,8 @@ const MessageReader = () => {
       setActiveConversation(conversation);
       setMessages(conversation.messages);
       
-      // Mark as active in "backend"
-      setActiveConversation(conversation);
+      setActiveConversation(conversation.id);
       
-      // Update local state
       setConversations(prevConversations => 
         prevConversations.map(c => ({
           ...c,
@@ -60,7 +55,6 @@ const MessageReader = () => {
         }))
       );
       
-      // On mobile, hide the conversation list
       if (isMobile) {
         setShowConversations(false);
       }
@@ -69,14 +63,12 @@ const MessageReader = () => {
     }
   };
   
-  // Scroll to bottom of messages
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages]);
   
-  // Send a message
   const handleSendMessage = async () => {
     if (!messageInput.trim() || !activeConversation) return;
     
@@ -85,7 +77,6 @@ const MessageReader = () => {
       setMessages(prev => [...prev, newMessage]);
       setMessageInput('');
       
-      // Update the conversation list
       setConversations(prev => 
         prev.map(c => 
           c.id === activeConversation.id 
@@ -98,9 +89,11 @@ const MessageReader = () => {
     }
   };
   
-  // Format date for message groups
   const formatMessageDate = (timestamp: string) => {
-    const messageDate = new Date(timestamp);
+    const messageDate = timestamp.includes('T') 
+      ? new Date(timestamp) 
+      : new Date(timestamp.replace(' ', 'T') + 'Z');
+    
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
@@ -114,7 +107,6 @@ const MessageReader = () => {
     }
   };
   
-  // Group messages by date
   const groupedMessages = messages.reduce<{ date: string; messages: Message[] }[]>((groups, message) => {
     const messageDate = formatMessageDate(message.timestamp);
     const existingGroup = groups.find(group => group.date === messageDate);
@@ -128,14 +120,12 @@ const MessageReader = () => {
     return groups;
   }, []);
   
-  // Handle back button on mobile
   const handleBackToConversations = () => {
     setShowConversations(true);
   };
   
   return (
     <div className="flex h-full bg-white overflow-hidden rounded-lg shadow-lg border border-gray-200">
-      {/* Conversations sidebar */}
       <div 
         className={cn(
           "w-full md:w-80 border-r border-gray-200 bg-sidebar flex-shrink-0 transition-all duration-300 ease-in-out",
@@ -152,7 +142,6 @@ const MessageReader = () => {
         />
       </div>
       
-      {/* Message area */}
       <div 
         className={cn(
           "flex-1 flex flex-col h-full transition-all duration-300 ease-in-out",
@@ -161,7 +150,6 @@ const MessageReader = () => {
       >
         {activeConversation ? (
           <>
-            {/* Conversation header */}
             <div className="h-16 px-4 border-b border-gray-200 flex items-center justify-between">
               <div className="flex items-center">
                 {isMobile && (
@@ -193,7 +181,6 @@ const MessageReader = () => {
               </div>
             </div>
             
-            {/* Messages container */}
             <div className="flex-1 p-4 overflow-y-auto messages-container relative fade-edge-top fade-edge-bottom bg-[#f5f6f7]">
               {groupedMessages.map((group, groupIndex) => (
                 <div key={group.date} className="mb-6">
@@ -213,7 +200,6 @@ const MessageReader = () => {
               <div ref={messagesEndRef} />
             </div>
             
-            {/* Message input */}
             <div className="p-3 border-t border-gray-200 bg-white glass-effect">
               <div className="flex items-center">
                 <button className="p-2 text-gray-500 hover:text-gray-700 transition-colors">
@@ -253,7 +239,6 @@ const MessageReader = () => {
             </div>
           </>
         ) : (
-          // Empty state when no conversation is selected
           <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
             <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
               <Send className="h-8 w-8 text-primary" />
