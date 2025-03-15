@@ -1,11 +1,23 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+
+import MessageReader from '@/components/MessageReader';
 
 const Index = () => {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-gray-600">Start building your amazing project here!</p>
+    <div className="w-full min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 md:p-8">
+      <div className="max-w-7xl mx-auto h-screen flex flex-col">
+        <header className="mb-6 text-center">
+          <div className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium mb-4">
+            Message Reader
+          </div>
+          <h1 className="text-3xl md:text-4xl font-bold mb-2">Modern Messaging Experience</h1>
+          <p className="text-muted-foreground max-w-2xl mx-auto">
+            A beautifully designed messaging interface with support for various message types including text, images, audio, video, and documents.
+          </p>
+        </header>
+        
+        <div className="flex-1 w-full">
+          <MessageReader />
+        </div>
       </div>
     </div>
   );
