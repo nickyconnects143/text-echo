@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useState } from 'react';
 import { Conversation, Message } from '@/lib/types';
 import { getConversationByUsername, getConversations, sendMessage, setActiveConversation } from '@/services/messageService';
@@ -48,14 +47,9 @@ const MessageReader = () => {
       
       setActiveConversation(conversation);
       setMessages(conversation.messages);
-      setActiveConversation(prevState => 
-        prevState?.id === conversationId 
-          ? prevState 
-          : conversation
-      );
       
       // Mark as active in "backend"
-      setActiveConversation(conversationId);
+      setActiveConversation(conversation);
       
       // Update local state
       setConversations(prevConversations => 

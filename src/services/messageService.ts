@@ -1,7 +1,7 @@
 
-import { Conversation, Message, User } from '@/lib/types';
+import { Conversation, Message, MessageType, User } from '@/lib/types';
 
-// Mock users
+// Mock users based on the database structure
 const users: User[] = [
   {
     id: '1',
@@ -50,7 +50,8 @@ const generateMessages = (userId: string): Message[] => {
   const user = users.find(u => u.id === userId);
   if (!user) return [];
 
-  const messageTypes: Message['messageType'][] = ['text', 'image', 'audio', 'video', 'document'];
+  // Define message types based on your database schema
+  const messageTypes: MessageType[] = ['text', 'image', 'audio', 'video', 'contact', 'location', 'document', 'gif', 'sticker', 'unknown'];
   const messageCount = 15 + Math.floor(Math.random() * 15); // Between 15-30 messages
   const messages: Message[] = [];
   
@@ -66,6 +67,7 @@ const generateMessages = (userId: string): Message[] => {
     let filePath;
     let mimeType;
     let mediaDuration;
+    let pageCount;
     
     if (messageType === 'text') {
       const textOptions = [
@@ -97,8 +99,10 @@ const generateMessages = (userId: string): Message[] => {
       filePath = 'document-file-path';
       mimeType = 'application/pdf';
       textData = 'Important documents';
+      pageCount = Math.floor(Math.random() * 10) + 1; // 1-10 pages
     }
     
+    // Create message object that matches your database schema
     messages.push({
       id: `msg-${userId}-${i}`,
       fromMe: isFromMe,
@@ -110,9 +114,14 @@ const generateMessages = (userId: string): Message[] => {
       sender: isFromMe ? 'You' : user.phoneNumber,
       username: isFromMe ? 'You' : user.name,
       reaction: Math.random() > 0.8 ? ['❤️', '👍', '😂', '😮', '😢', '🙏'][Math.floor(Math.random() * 6)] : undefined,
+      forwardScore: Math.random() > 0.9 ? Math.floor(Math.random() * 5) + 1 : undefined,
+      linkIndex: Math.random() > 0.9 ? Math.floor(Math.random() * 3) : undefined,
       filePath,
       mimeType,
-      mediaDuration
+      mediaDuration,
+      pageCount,
+      mentionMsgId: Math.random() > 0.9 ? `mention-${Math.floor(Math.random() * 100)}` : undefined,
+      subject: Math.random() > 0.9 ? 'Important Message' : undefined
     });
   }
   
