@@ -1,9 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
 import { Conversation, Message } from '@/lib/types';
-import { getConversationByUsername, getConversations, sendMessage, setActiveConversation } from '@/services/messageService';
+import { 
+  getConversationByUsername, 
+  getConversations, 
+  sendMessage, 
+  setActiveConversation, 
+  setDatabasePath, 
+  isDatabasePathSet, 
+  getDatabasePath 
+} from '@/services/messageService';
 import ConversationList from './ConversationList';
 import MessageBubble from './MessageBubble';
-import { ChevronLeft, Paperclip, Mic, Send, X, Smile, Plus, Database, Upload } from 'lucide-react';
+import { ChevronLeft, Paperclip, Mic, Send, X, Smile, Plus, Database, Upload, HardDrive } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -20,6 +28,8 @@ const MessageReader = () => {
   const [messageInput, setMessageInput] = useState('');
   const [showConversations, setShowConversations] = useState(true);
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
+  const [isDbPathDialogOpen, setIsDbPathDialogOpen] = useState(false);
+  const [dbPathInput, setDbPathInput] = useState(getDatabasePath() || '');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isMobile = useIsMobile();
@@ -154,6 +164,32 @@ const MessageReader = () => {
     setIsUploadDialogOpen(true);
   };
   
+  const handleSetDatabasePath = () => {
+    if (!dbPathInput.trim()) {
+      toast.error("Please enter a valid database path");
+      return;
+    }
+    
+    setLoading(true);
+    setDatabasePath(dbPathInput);
+    
+    setTimeout(() => {
+      setLoading(false);
+      setIsDbPathDialogOpen(false);
+      toast.success('Database path set successfully', {
+        description: 'Your messages are now loading from the specified database.',
+        duration: 3000
+      });
+      
+      getConversations().then(data => {
+        setConversations(data);
+        if (data.length > 0 && !activeConversation) {
+          handleSelectConversation(data[0].id);
+        }
+      });
+    }, 1500);
+  };
+  
   return (
     <div className="flex h-full bg-white overflow-hidden rounded-lg shadow-lg border border-gray-200">
       <div 
@@ -164,15 +200,26 @@ const MessageReader = () => {
       >
         <div className="h-16 px-4 border-b border-gray-200 flex items-center justify-between">
           <h1 className="text-lg font-semibold">Messages</h1>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="rounded-full" 
-            onClick={handleUploadClick}
-            title="Upload database"
-          >
-            <Upload className="h-5 w-5" />
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="rounded-full" 
+              onClick={() => setIsDbPathDialogOpen(true)}
+              title="Set database path"
+            >
+              <HardDrive className="h-5 w-5" />
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="rounded-full" 
+              onClick={() => setIsUploadDialogOpen(true)}
+              title="Upload database"
+            >
+              <Upload className="h-5 w-5" />
+            </Button>
+          </div>
         </div>
         <ConversationList 
           conversations={conversations} 
@@ -292,14 +339,24 @@ const MessageReader = () => {
                     ? 'No conversations yet' 
                     : 'Select a conversation to start messaging'}
             </p>
-            <Button 
-              variant="outline" 
-              className="mt-4 flex items-center gap-2"
-              onClick={handleUploadClick}
-            >
-              <Upload className="h-4 w-4" /> 
-              Upload Database
-            </Button>
+            <div className="flex gap-2 mt-4">
+              <Button 
+                variant="outline" 
+                className="flex items-center gap-2"
+                onClick={() => setIsDbPathDialogOpen(true)}
+              >
+                <HardDrive className="h-4 w-4" /> 
+                Set Database Path
+              </Button>
+              <Button 
+                variant="outline" 
+                className="flex items-center gap-2"
+                onClick={() => setIsUploadDialogOpen(true)}
+              >
+                <Upload className="h-4 w-4" /> 
+                Upload Database
+              </Button>
+            </div>
           </div>
         )}
       </div>
@@ -337,6 +394,45 @@ const MessageReader = () => {
                 />
               </label>
             </div>
+            <div className="text-xs text-gray-500 text-center">
+              Your data remains on your device and is not uploaded to any server.
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+      
+      <Dialog open={isDbPathDialogOpen} onOpenChange={setIsDbPathDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <HardDrive className="h-5 w-5" /> Set Database Path
+            </DialogTitle>
+            <DialogDescription>
+              Enter the full path to your SQLite database file.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="flex flex-col gap-2">
+              <label htmlFor="db-path" className="text-sm font-medium">
+                Database File Path
+              </label>
+              <Input
+                id="db-path"
+                type="text"
+                placeholder="/path/to/your/database.db"
+                value={dbPathInput}
+                onChange={(e) => setDbPathInput(e.target.value)}
+              />
+              <p className="text-xs text-gray-500">
+                Example: C:\Users\YourName\Documents\whatsapp_chat.db
+              </p>
+            </div>
+            <Button 
+              className="w-full"
+              onClick={handleSetDatabasePath}
+            >
+              Connect to Database
+            </Button>
             <div className="text-xs text-gray-500 text-center">
               Your data remains on your device and is not uploaded to any server.
             </div>

@@ -1,3 +1,4 @@
+
 import { Conversation, Message, MessageType, User } from '@/lib/types';
 
 // Mock users based on the database structure
@@ -150,10 +151,32 @@ const generateConversations = (): Conversation[] => {
 // Mock conversations
 let conversations = generateConversations();
 
-// Simulate API call to get conversations - in a real implementation, this would fetch from your database
+// Database path state
+let databasePath: string | null = null;
+
+// Set the database path
+export const setDatabasePath = (path: string): void => {
+  databasePath = path;
+  console.log(`Database path set to: ${path}`);
+};
+
+// Check if database path is set
+export const isDatabasePathSet = (): boolean => {
+  return databasePath !== null && databasePath.trim() !== '';
+};
+
+// Get database path
+export const getDatabasePath = (): string | null => {
+  return databasePath;
+};
+
+// Simulate API call to get conversations with database path consideration
 export const getConversations = async (): Promise<Conversation[]> => {
-  // In a real implementation, this would query your message_data table
   return new Promise(resolve => {
+    // In a real implementation, this would check the database path
+    // and use it to connect to the SQLite database
+    console.log(`Using database at: ${databasePath || 'Mock data (no database path provided)'}`);
+    
     setTimeout(() => {
       resolve(conversations);
     }, 500);
